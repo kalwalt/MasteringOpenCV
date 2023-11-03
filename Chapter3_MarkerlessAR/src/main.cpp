@@ -18,8 +18,8 @@
 ////////////////////////////////////////////////////////////////////
 // Standard includes:
 #include <opencv2/opencv.hpp>
-#include <gl/gl.h>
-#include <gl/glu.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 
 /**
  * Processes a recorded video or live view from web-camera and allows you to adjust homography refinement and 
@@ -63,7 +63,8 @@ int main(int argc, const char * argv[])
 
     if (argc == 2)
     {
-        processVideo(patternImage, calibration, cv::VideoCapture());
+        cv::VideoCapture cap;
+        processVideo(patternImage, calibration, cap);
     }
     else if (argc == 3)
     {
@@ -94,25 +95,27 @@ int main(int argc, const char * argv[])
 void processVideo(const cv::Mat& patternImage, CameraCalibration& calibration, cv::VideoCapture& capture)
 {
     // Grab first frame to get the frame dimensions
-    cv::Mat currentFrame;  
-    capture >> currentFrame;
+    cv::Mat currentFrame; 
+
+    capture.open(0); // Open the default camera
 
     // Check the capture succeeded:
-    if (currentFrame.empty())
-    {
-        std::cout << "Cannot open video capture device" << std::endl;
-        return;
+    if (!capture.isOpened()){ // This section prompt an error message if no video stream is found//
+      std::cout << "No video stream detected" << std::endl;
+      system("pause");
+      return;
     }
-
-    cv::Size frameSize(currentFrame.cols, currentFrame.rows);
-
-    ARPipeline pipeline(patternImage, calibration);
-    ARDrawingContext drawingCtx("Markerless AR", frameSize, calibration);
 
     bool shouldQuit = false;
     do
     {
         capture >> currentFrame;
+
+        cv::Size frameSize(currentFrame.cols, currentFrame.rows);
+
+        ARPipeline pipeline(patternImage, calibration);
+        ARDrawingContext drawingCtx("Markerless AR", frameSize, calibration);
+
         if (currentFrame.empty())
         {
             shouldQuit = true;
@@ -143,11 +146,11 @@ bool processFrame(const cv::Mat& cameraFrame, ARPipeline& pipeline, ARDrawingCon
 
     // Draw information:
     if (pipeline.m_patternDetector.enableHomographyRefinement)
-        cv::putText(img, "Pose refinement: On   ('h' to switch off)", cv::Point(10,15), CV_FONT_HERSHEY_PLAIN, 1, CV_RGB(0,200,0));
+        cv::putText(img, "Pose refinement: On   ('h' to switch off)", cv::Point(10,15), cv::FONT_HERSHEY_PLAIN, 1, CV_RGB(0,200,0));
     else
-        cv::putText(img, "Pose refinement: Off  ('h' to switch on)",  cv::Point(10,15), CV_FONT_HERSHEY_PLAIN, 1, CV_RGB(0,200,0));
+        cv::putText(img, "Pose refinement: Off  ('h' to switch on)",  cv::Point(10,15), cv::FONT_HERSHEY_PLAIN, 1, CV_RGB(0,200,0));
 
-    cv::putText(img, "RANSAC threshold: " + ToString(pipeline.m_patternDetector.homographyReprojectionThreshold) + "( Use'-'/'+' to adjust)", cv::Point(10, 30), CV_FONT_HERSHEY_PLAIN, 1, CV_RGB(0,200,0));
+    cv::putText(img, "RANSAC threshold: " + ToString(pipeline.m_patternDetector.homographyReprojectionThreshold) + "( Use'-'/'+' to adjust)", cv::Point(10, 30), cv::FONT_HERSHEY_PLAIN, 1, CV_RGB(0,200,0));
 
     // Set a new camera frame:
     drawingCtx.updateBackground(img);

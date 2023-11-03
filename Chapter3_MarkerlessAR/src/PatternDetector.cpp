@@ -24,7 +24,7 @@
 
 PatternDetector::PatternDetector(cv::Ptr<cv::FeatureDetector> detector, 
     cv::Ptr<cv::DescriptorExtractor> extractor, 
-    cv::Ptr<cv::DescriptorMatcher> matcher, 
+    cv::Ptr<cv::BFMatcher> matcher, 
     bool ratioTest)
     : m_detector(detector)
     , m_extractor(extractor)
@@ -194,9 +194,9 @@ bool PatternDetector::findPattern(const cv::Mat& image, PatternTrackingInfo& inf
 void PatternDetector::getGray(const cv::Mat& image, cv::Mat& gray)
 {
     if (image.channels()  == 3)
-        cv::cvtColor(image, gray, CV_BGR2GRAY);
+        cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY);
     else if (image.channels() == 4)
-        cv::cvtColor(image, gray, CV_BGRA2GRAY);
+        cv::cvtColor(image, gray, cv::COLOR_BGRA2GRAY);
     else if (image.channels() == 1)
         gray = image;
 }
@@ -279,7 +279,7 @@ bool PatternDetector::refineMatchesWithHomography
     std::vector<unsigned char> inliersMask(srcPoints.size());
     homography = cv::findHomography(srcPoints, 
                                     dstPoints, 
-                                    CV_FM_RANSAC, 
+                                    cv::FM_RANSAC, 
                                     reprojectionThreshold, 
                                     inliersMask);
 
